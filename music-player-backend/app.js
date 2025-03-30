@@ -1,33 +1,33 @@
-import mongoose from "mongoose";
-// import dotenv from "dotenv";
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
+import authRoutes from "./middleware/auth.js";
+import session from "express-session";
 
-import User from "./models/User.js";
-// import Post from "./models/Post.js";
-import { users } from "./data/index.js";
+dotenv.config();
 
-const MongoURL = "mongodb://127.0.0.1:27017/MusicAppDb";
+const app = express();
+const port = process.env.PORT || 8080;
 
-async function seedDatabase() {
-  try {
-    await mongoose.connect(MongoURL);
+// Middleware
+app.use(cors());
+app.use(express.json()); // Parse JSON request bodies
 
-    if (mongoose.connection.readyState !== 1) {
-      throw new Error("Cannot connect to DB");
-    }
+app.use(
+  session({
+    secret: "your-secret-key",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 
-    console.log("✅ Connected to DB");
+// Routes
+app.use("/api/auth", authRoutes);
 
-    await User.deleteMany();
-    console.log("🗑️ Users collection cleared");
+app.get("/", (req, res) => {
+  res.send("Inside the server");
+});
 
-    await User.insertMany(users);
-    console.log("✅ Users added successfully");
-  } catch (error) {
-    console.error("❌ Error:", error);
-  } finally {
-    await mongoose.disconnect();
-    console.log("🔌 Disconnected from MongoDB");
-  }
-}
-
-seedDatabase();
+app.listen(port, () => {
+  console.log(`Listening on port ${port}`);
+});
