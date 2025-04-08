@@ -7,9 +7,9 @@ dotenv.config();
 
 const router = express.Router();
 
-const clientId = process.env.SPOTIFY_CLIENT_ID;
-const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-const redirectUri = process.env.SPOTIFY_REDIRECT_URI;
+const clientId = process.env.SOUNDCLOUD_CLIENT_ID;
+const clientSecret = process.env.SOUNDCLOUD_CLIENT_SECRET;
+const redirectUri = process.env.SOUNDCLOUD_REDIRECT_URI;
 const scope = "user-read-private user-read-email";
 
 // Function to generate a random string (code_verifier)
@@ -32,22 +32,21 @@ const base64urlEncode = (buffer) =>
     .replace(/\+/g, "-")
     .replace(/\//g, "_");
 
-// Step 1: Redirect user to Spotify authorization
+router.get("/", (req, res) => {
+  res.send(
+    "SoundCloud Authentication API - Available routes: /login, /callback, /refresh"
+  );
+});
+
+// Step 1: Redirect user to SoundCloud authorization
 router.get("/login", (req, res) => {
-  const codeVerifier = generateRandomString(64); // Generate a new code_verifier
-  const codeChallenge = base64urlEncode(sha256(codeVerifier)); // Generate code_challenge
-
-  // Ensure session exists and store code_verifier
-  req.session.codeVerifier = codeVerifier;
-
-  const authUrl = new URL("https://accounts.spotify.com/authorize");
+  const authUrl = new URL("https://soundcloud.com/connect");
   authUrl.search = new URLSearchParams({
     response_type: "code",
     client_id: clientId,
-    scope,
     redirect_uri: redirectUri,
-    code_challenge_method: "S256",
-    code_challenge: codeChallenge,
+    scope: "non-expiring",
+    display: "popup",
   });
 
   res.redirect(authUrl.toString());
@@ -60,20 +59,13 @@ router.get("/callback", async (req, res) => {
     return res.status(400).json({ error: "Authorization code is missing" });
   }
 
-  // Retrieve code_verifier from session (MUST MATCH the one from /login)
-  const codeVerifier = req.session.codeVerifier;
-  if (!codeVerifier) {
-    return res.status(400).json({ error: "Missing code_verifier in session" });
-  }
-
-  const url = "https://accounts.spotify.com/api/token";
+  const url = "https://api.soundcloud.com/oauth2/token";
   const payload = new URLSearchParams({
     client_id: clientId,
     client_secret: clientSecret,
+    redirect_uri: redirectUri,
     grant_type: "authorization_code",
     code,
-    redirect_uri: redirectUri,
-    code_verifier: codeVerifier, // Use the stored code_verifier
   });
 
   try {
@@ -86,16 +78,21 @@ router.get("/callback", async (req, res) => {
     });
 
     const data = await response.json();
-    console.log("Spotify API Response:", data);
+    console.log("SoundCloud API Response:", data);
 
     if (data.access_token) {
-      res.json({
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-        expires_in: data.expires_in,
-      });
+      // ✅ Store in session
+      req.session.accessToken = data.access_token;
+
+      // Optional: also store refresh token if you plan to use it
+      req.session.refreshToken = data.refresh_token;
+
+      // Redirect or respond
+      res.redirect("http://localhost:5173"); // send user back to frontend
     } else {
-      res.status(400).json({ error: "Failed to retrieve access token" });
+      res
+        .status(400)
+        .json({ error: "Failed to retrieve access token", details: data });
     }
   } catch (error) {
     res.status(500).json({ error: "Server error", details: error.message });
@@ -109,7 +106,7 @@ router.post("/refresh", async (req, res) => {
     return res.status(400).json({ error: "Refresh token is required" });
   }
 
-  const url = "https://accounts.spotify.com/api/token";
+  const url = "https://secure.soundcloud.com/api/token";
   const payload = new URLSearchParams({
     client_id: clientId,
     client_secret: clientSecret,
@@ -127,7 +124,7 @@ router.post("/refresh", async (req, res) => {
     });
 
     const data = await response.json();
-    console.log("Spotify API Response:", data);
+    console.log("SoundCloud API Response:", data);
 
     if (data.access_token) {
       res.json({
