@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import authRoutes from "./middleware/auth.js";
 import streamRoutes from "./middleware/stream.js";
+import searchRoutes from "./middleware/search.js";
 import session from "express-session";
 
 dotenv.config();
@@ -11,7 +12,12 @@ const app = express();
 const port = process.env.PORT || 8080;
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 app.use(express.json()); // Parse JSON request bodies
 
 app.use(
@@ -26,6 +32,8 @@ app.use(
 app.use("/api/auth", authRoutes);
 
 app.use("/api", streamRoutes);
+
+app.use("/api", searchRoutes);
 
 app.get("/", (req, res) => {
   res.send("Inside the server");

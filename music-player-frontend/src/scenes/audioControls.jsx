@@ -6,7 +6,7 @@ export default function AudioPlayer() {
   const [sound, setSound] = useState(null);
 
   useEffect(() => {
-    const streamUrl = "http://localhost:8080/api/stream/807590698"; // Your proxy endpoint
+    const streamUrl = "http://localhost:8080/api/stream/807590698";
 
     const howl = new Howl({
       src: [streamUrl],

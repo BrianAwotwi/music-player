@@ -6,15 +6,10 @@ const Search = () => {
 
   const getQuery = async (term) => {
     const response = await fetch(
-      `https://api.soundcloud.com/tracks?q=${encodeURIComponent(
-        term
-      )}&type=track`,
+      `http://localhost:8080/api/search/${encodeURIComponent(term)}`,
       {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer 2-302046-1537117888-9mv5tN5xIna5g",
-        },
+        credentials: "include",
       }
     );
 
