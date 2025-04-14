@@ -1,14 +1,18 @@
 import express from "express";
 import fetch from "node-fetch";
 
+import requireAuth from "./requireAuth.js";
+
 const router = express.Router();
 
-router.get("/search/:query", async (req, res) => {
+router.get("/search/:query", requireAuth, async (req, res) => {
   const { query } = req.params;
   const accessToken = req.session.accessToken;
 
   if (!accessToken) {
-    return res.status(401).json({ error: "No access token in session" });
+    return res
+      .status(401)
+      .json({ error: "No access token", redirect: "/api/auth/login" });
   }
 
   try {
@@ -21,6 +25,13 @@ router.get("/search/:query", async (req, res) => {
         },
       }
     );
+
+    // ⛔ If SoundCloud says unauthorized, redirect
+    if (getSearchResults.status === 401) {
+      return res
+        .status(401)
+        .json({ error: "Access token expired", redirect: "/api/auth/login" });
+    }
 
     const data = await getSearchResults.json();
 

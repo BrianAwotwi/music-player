@@ -1,32 +1,147 @@
-import { useEffect, useState } from "react";
-import { Howl } from "howler";
+import { useEffect, useState, useRef, useCallback } from "react";
+import WaveSurfer from "wavesurfer.js";
+import {
+  IoPlay,
+  IoPause,
+  IoVolumeLow,
+  IoVolumeMedium,
+  IoVolumeHigh,
+  IoVolumeMute,
+} from "react-icons/io5";
 
-export default function AudioPlayer() {
+export default function AudioPlayer({ trackId }) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [sound, setSound] = useState(null);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+  const [validStreamUrl, setValidStreamUrl] = useState(null);
+
+  const containerRef = useRef(null);
+  const wavesurferRef = useRef(null);
 
   useEffect(() => {
-    const streamUrl = "http://localhost:8080/api/stream/807590698";
+    if (!trackId || !containerRef.current) return;
 
-    const howl = new Howl({
-      src: [streamUrl],
-      format: ["mp3"],
-      html5: true,
-    });
+    const streamUrl = `http://localhost:8080/api/stream/${trackId}`;
 
-    setSound(howl);
+    const setupWaveSurfer = async () => {
+      try {
+        const response = await fetch(streamUrl, {
+          method: "HEAD",
+          credentials: "include",
+        });
+
+        if (response.status === 401) {
+          const data = await response.json();
+          if (data.redirect) {
+            window.location.href = `http://localhost:8080${data.redirect}`;
+            return;
+          }
+        }
+
+        if (!response.ok) {
+          console.warn("Stream URL invalid:", response.status);
+          return;
+        }
+
+        setValidStreamUrl(streamUrl);
+
+        if (wavesurferRef.current) {
+          wavesurferRef.current.destroy();
+        }
+
+        const ws = WaveSurfer.create({
+          container: containerRef.current,
+          waveColor: "rgb(200, 0, 200)",
+          progressColor: "rgb(100, 0, 100)",
+          height: 50,
+          barWidth: 2,
+          barGap: 1,
+          barRadius: 2,
+          backend: "MediaElement",
+          normalize: true,
+          fetchParams: {
+            credentials: "include",
+          },
+        });
+
+        wavesurferRef.current = ws;
+
+        ws.load(streamUrl);
+
+        ws.on("ready", () => {
+          ws.setVolume(isMuted ? 0 : volume);
+          ws.play();
+          setIsPlaying(true);
+        });
+
+        ws.on("play", () => setIsPlaying(true));
+        ws.on("pause", () => setIsPlaying(false));
+      } catch (err) {
+        console.error("Stream error:", err);
+      }
+    };
+
+    setupWaveSurfer();
+
+    return () => {
+      if (wavesurferRef.current) {
+        wavesurferRef.current.destroy();
+        wavesurferRef.current = null;
+      }
+    };
+  }, [trackId]);
+
+  useEffect(() => {
+    if (wavesurferRef.current) {
+      wavesurferRef.current.setVolume(isMuted ? 0 : volume);
+    }
+  }, [volume, isMuted]);
+
+  const togglePlayPause = useCallback(() => {
+    if (wavesurferRef.current) {
+      wavesurferRef.current.playPause();
+    }
   }, []);
 
-  const togglePlay = () => {
-    if (!sound) return;
-
-    if (isPlaying) {
-      sound.pause();
-    } else {
-      sound.play();
-    }
-    setIsPlaying(!isPlaying);
+  const toggleMute = () => {
+    setIsMuted((prev) => !prev);
   };
 
-  return <button onClick={togglePlay}>{isPlaying ? "Pause" : "Play"}</button>;
+  const handleVolumeChange = (e) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    setIsMuted(newVolume === 0);
+  };
+
+  const getVolumeIcon = () => {
+    if (isMuted || volume === 0) return <IoVolumeMute />;
+    if (volume < 0.3) return <IoVolumeLow />;
+    if (volume < 0.7) return <IoVolumeMedium />;
+    return <IoVolumeHigh />;
+  };
+
+  if (!trackId) return null;
+
+  return (
+    <div className="audio-widget flex items-center gap-4">
+      <button onClick={togglePlayPause} className="text-2xl">
+        {isPlaying ? <IoPause /> : <IoPlay />}
+      </button>
+
+      <button onClick={toggleMute} className="text-2xl">
+        {getVolumeIcon()}
+      </button>
+
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        value={isMuted ? 0 : volume}
+        onChange={handleVolumeChange}
+      />
+
+      <div ref={containerRef} className="flex-1" />
+    </div>
+  );
 }

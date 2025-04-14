@@ -1,6 +1,7 @@
 import { useState } from "react";
+import Card from "./card";
 
-const Search = () => {
+const Search = ({ setSelectedTrackId }) => {
   const [songs, setSongs] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -13,9 +14,16 @@ const Search = () => {
       }
     );
 
-    const data = await response.json();
-    setSongs(data.tracks?.items || []);
-    console.log(data);
+    const data = await response.json(); // ✅ Only call this once
+
+    if (response.status === 401) {
+      if (data.redirect) {
+        window.location.href = `http://localhost:8080${data.redirect}`;
+      }
+      return; // ⛔ Don't continue if unauthorized
+    }
+
+    setSongs(data.tracks || []);
   };
 
   return (
@@ -34,10 +42,8 @@ const Search = () => {
       {songs.length > 0 ? (
         <div className="results">
           {songs.map((track) => (
-            <div key={track.id}>
-              <p>
-                {track.name} - {track.artists[0].name}
-              </p>
+            <div key={track.id} onClick={() => setSelectedTrackId(track.id)}>
+              <Card card={track} />
             </div>
           ))}
         </div>
