@@ -49,7 +49,13 @@ router.get("/stream/:trackId", requireAuth, async (req, res) => {
         .json({ error: "Failed to stream audio" });
     }
 
-    res.setHeader("Content-Type", "audio/mpeg");
+    res.set({
+      "Content-Type": "audio/mpeg",
+      "Access-Control-Allow-Origin": "http://localhost:5173",
+      "Access-Control-Allow-Credentials": "true",
+      "Cross-Origin-Resource-Policy": "cross-origin",
+    });
+
     audioResponse.body.pipe(res);
   } catch (err) {
     res
