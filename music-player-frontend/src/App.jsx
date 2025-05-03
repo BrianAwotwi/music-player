@@ -17,7 +17,11 @@ function App() {
     <>
       <Search setSelectedTrackId={setTrackId} />
       {isAudioReady && <AudioVisualizer audioRef={audioRef} />}
-      <AudioPlayer trackId={trackId} setAudioElement={handleSetAudioElement} />
+      <AudioPlayer
+        trackId={trackId}
+        audioRef={audioRef}
+        setAudioElement={handleSetAudioElement}
+      />
     </>
   );
 }

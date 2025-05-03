@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IoChevronForwardOutline, IoChevronBackOutline } from "react-icons/io5";
 import "./visualizerStyle.css";
 
@@ -12,22 +12,28 @@ export default function AudioVisualizer({ audioRef }) {
 
   const [index, setIndex] = useState(0);
 
-  const drawVisualizer = useCallback(() => {
+  useEffect(() => {
     if (!audioRef.current) return;
 
     if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContext();
+      audioContextRef.current = new (window.AudioContext ||
+        window.webkitAudioContext)();
     }
 
-    const audioContext = audioContextRef.current;
+    const audioCtx = audioContextRef.current;
 
-    if (!sourceRef.current) {
-      sourceRef.current = audioContext.createMediaElementSource(
-        audioRef.current
-      );
-      analyserRef.current = audioContext.createAnalyser();
-      sourceRef.current.connect(analyserRef.current);
-      analyserRef.current.connect(audioContext.destination);
+    // Prevent recreating the MediaElementSourceNode
+    if (!sourceRef.current && audioRef.current) {
+      try {
+        sourceRef.current = audioCtx.createMediaElementSource(audioRef.current);
+        analyserRef.current = audioCtx.createAnalyser();
+
+        sourceRef.current.connect(analyserRef.current);
+        analyserRef.current.connect(audioCtx.destination);
+      } catch (err) {
+        console.warn("MediaElementSourceNode already exists:", err.message);
+        return;
+      }
     }
 
     const analyser = analyserRef.current;
@@ -68,33 +74,13 @@ export default function AudioVisualizer({ audioRef }) {
 
     draw();
 
-    return () => {
-      cancelAnimationFrame(animationRef.current);
-    };
-  }, [audioRef]);
-
-  console.log(audioRef.current, "audioRef.current");
-
-  useEffect(() => {
-    if (!audioRef.current) return;
-
-    const cleanup = drawVisualizer();
-
-    return () => {
-      if (cleanup) cleanup();
-    };
+    return () => cancelAnimationFrame(animationRef.current);
   }, [audioRef.current]);
 
-  // function clearAudioSource() {
-  //   if (sourceRef.current) {
-  //     sourceRef.current.disconnect();
-  //     sourceRef.current = null;
-  //   }
-  //   if (analyserRef.current) {
-  //     analyserRef.current.disconnect();
-  //     analyserRef.current = null;
-  //   }
-  // }
+  // console.log(audioRef);
+  // console.log(audioRef.current);
+  // console.log(audioRef.current.currentSrc);
+  console.log("Visualizer is connected to:", audioRef.current.src);
 
   const goForwardPattern = () => {
     setIndex((prev) => (prev + 1) % 2);

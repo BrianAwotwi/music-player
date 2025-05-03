@@ -9,11 +9,11 @@ import {
   IoVolumeMute,
 } from "react-icons/io5";
 
-export default function AudioPlayer({ trackId, setAudioElement }) {
+export default function AudioPlayer({ trackId, setAudioElement, audioRef }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
-
+  const audioElementRef = useRef(new Audio());
   const containerRef = useRef(null);
   const wavesurferRef = useRef(null);
 
@@ -42,12 +42,19 @@ export default function AudioPlayer({ trackId, setAudioElement }) {
           return;
         }
 
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.removeAttribute("src");
+          audioRef.current.load();
+        }
+
         if (wavesurferRef.current) {
           wavesurferRef.current.destroy();
         }
 
         const ws = WaveSurfer.create({
           container: containerRef.current,
+          media: audioElementRef.current,
           waveColor: "rgb(200, 0, 200)",
           progressColor: "rgb(100, 0, 100)",
           height: 50,
@@ -66,7 +73,7 @@ export default function AudioPlayer({ trackId, setAudioElement }) {
         ws.load(streamUrl);
 
         ws.on("ready", () => {
-          setAudioElement(wavesurferRef.current.media);
+          setAudioElement(audioElementRef.current);
           ws.setVolume(isMuted ? 0 : volume);
           ws.play();
           setIsPlaying(true);
