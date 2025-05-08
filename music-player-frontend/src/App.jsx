@@ -1,27 +1,63 @@
 import { useState, useRef } from "react";
-import Search from "./scenes/searchField";
+import Search from "./scenes/search/searchField";
 import AudioPlayer from "./scenes/audioControls";
 import AudioVisualizer from "./scenes/audio-visualizer/audioVisualizer";
+import PlaylistView from "./scenes/search/playlistView";
+import UserView from "./scenes/search/userView";
 
 function App() {
-  const [trackId, setTrackId] = useState(null);
-  const audioRef = useRef(null);
   const [isAudioReady, setIsAudioReady] = useState(false);
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState(null);
+  const [selectedTrackId, setSelectedTrackId] = useState(null);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const audioRef = useRef(null);
 
   const handleSetAudioElement = (el) => {
     audioRef.current = el;
-    setIsAudioReady(true); // trigger re-render
+    setIsAudioReady(true);
+  };
+
+  const renderMainView = () => {
+    if (selectedPlaylistId) {
+      return (
+        <PlaylistView
+          playlistId={selectedPlaylistId}
+          onBack={() => setSelectedPlaylistId(null)}
+          onTrackSelect={setSelectedTrackId}
+        />
+      );
+    } else if (selectedUserId) {
+      return (
+        <UserView
+          userId={selectedUserId}
+          onBack={() => setSelectedUserId(null)}
+        />
+      );
+    } else {
+      return (
+        <Search
+          setSelectedTrackId={setSelectedTrackId}
+          setSelectedPlaylistId={setSelectedPlaylistId}
+          setSelectedUserId={setSelectedUserId}
+        />
+      );
+    }
   };
 
   return (
     <>
-      <Search setSelectedTrackId={setTrackId} />
-      {isAudioReady && <AudioVisualizer audioRef={audioRef} />}
-      <AudioPlayer
-        trackId={trackId}
-        audioRef={audioRef}
-        setAudioElement={handleSetAudioElement}
-      />
+      {renderMainView()}
+
+      {selectedTrackId && (
+        <>
+          {isAudioReady && <AudioVisualizer audioRef={audioRef} />}
+          <AudioPlayer
+            trackId={selectedTrackId}
+            audioRef={audioRef}
+            setAudioElement={handleSetAudioElement}
+          />
+        </>
+      )}
     </>
   );
 }

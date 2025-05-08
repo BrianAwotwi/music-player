@@ -33,7 +33,7 @@ app.use("/api/auth", authRoutes);
 
 app.use("/api", streamRoutes);
 
-app.use("/api", searchRoutes);
+app.use("/api/search", searchRoutes);
 
 app.get("/", (req, res) => {
   res.send("Inside the server");
