@@ -9,6 +9,8 @@ import {
   IoVolumeMute,
 } from "react-icons/io5";
 
+import "./audioPlayer.css";
+
 export default function AudioPlayer({ trackId, setAudioElement, audioRef }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
@@ -128,7 +130,7 @@ export default function AudioPlayer({ trackId, setAudioElement, audioRef }) {
   if (!trackId) return null;
 
   return (
-    <div className="audio-widget flex items-center gap-4">
+    <div className="audio-widget">
       <button onClick={togglePlayPause} className="text-2xl">
         {isPlaying ? <IoPause /> : <IoPlay />}
       </button>

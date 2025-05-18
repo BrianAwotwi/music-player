@@ -1,0 +1,44 @@
+/* Audio Player Widget Container */
+.audio-widget {
+  display: flex;
+  align-items: center;
+  gap: 1rem; /* 16px */
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  width: 80%;
+  transform: translateX(-50%);
+  padding: 0.5rem 1rem;
+  background-color: #111;
+  color: white;
+  border-radius: 0.5rem;
+  z-index: 20; /* ensure it appears above canvas or background */
+}
+
+/* Play/Pause and Mute Buttons */
+.audio-widget button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.audio-widget button:hover {
+  color: #ccc;
+}
+
+/* Volume Slider */
+.audio-widget input[type="range"] {
+  width: 100px;
+  accent-color: #c0c;
+  cursor: pointer;
+}
+
+/* WaveSurfer Container */
+.audio-widget .flex-1 {
+  flex: 1;
+}

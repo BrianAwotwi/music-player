@@ -61,8 +61,8 @@ export default function AudioVisualizer({ audioRef }) {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
-    canvas.width = containerRef.current.clientWidth;
-    canvas.height = containerRef.current.clientHeight;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
     const drawPattern = () => {
       animationRef.current = requestAnimationFrame(drawPattern);
@@ -79,6 +79,23 @@ export default function AudioVisualizer({ audioRef }) {
     return () => cancelAnimationFrame(animationRef.current);
   }, [audioRef.current, index]);
 
+  useEffect(() => {
+    const resizeCanvas = () => {
+      if (containerRef.current && canvasRef.current) {
+        canvasRef.current.width = window.innerWidth;
+        canvasRef.current.height = window.innerHeight;
+      }
+    };
+
+    resizeCanvas(); // run on mount
+    window.addEventListener("resize", resizeCanvas);
+
+    return () => {
+      window.removeEventListener("resize", resizeCanvas);
+      cancelAnimationFrame(animationRef.current);
+    };
+  }, []);
+
   const goForwardPattern = () => {
     setIndex((prev) => (prev + 1) % 2);
   };
@@ -88,16 +105,14 @@ export default function AudioVisualizer({ audioRef }) {
   };
 
   return (
-    <div ref={containerRef} className="relative w-full h-64 bg-black">
-      <canvas ref={canvasRef} className="w-full h-full" />
-      <p className="absolute bottom-2 left-2 text-white text-sm">
-        {patterns[index].name}
-      </p>
+    <div ref={containerRef} className="visualizer-container">
+      <canvas ref={canvasRef} className="visualizer-canvas" />
 
-      <div className="absolute bottom-2 right-2 flex gap-2 text-white">
+      <div className="visualizer-controls">
         <button onClick={goBackPattern}>
           <IoChevronBackOutline />
         </button>
+        <p className="visualizer-pattern-name">{patterns[index].name}</p>
         <button onClick={goForwardPattern}>
           <IoChevronForwardOutline />
         </button>

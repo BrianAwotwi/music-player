@@ -1,10 +1,16 @@
 import { useState } from "react";
 import Card from "./card";
 
+import { RiCloseLine } from "react-icons/ri";
+
+import "./Search.css";
+
 const Search = ({
   setSelectedTrackId,
   setSelectedPlaylistId,
   setSelectedUserId,
+  onClose,
+  open,
 }) => {
   const [tracks, setTracks] = useState([]);
   const [playlists, setPlaylists] = useState([]);
@@ -15,6 +21,7 @@ const Search = ({
   const [playlistsOption, setPlaylistsOption] = useState(false);
   const [tracksOption, setTracksOption] = useState(false);
   const [expandedPlaylists, setExpandedPlaylists] = useState(null);
+  const [closeMenu, setCloseMenu] = useState(false);
 
   const getAll = async (term) => {
     const response = await fetch(
@@ -174,19 +181,29 @@ const Search = ({
     setAllOption(false);
   };
 
+  const handleCloseMenu = () => {
+    onClose();
+  };
+
   return (
-    <div className="search-container">
-      <p>Search for your favorite tracks and play them instantly!</p>
+    <div className={`search-container ${open ? "open" : ""}`}>
+      {/* <p>Search for your favorite tracks and play them instantly!</p> */}
       <div className="search-bar">
-        <input
-          placeholder="Search for tracks, playlists, or users..."
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") getAll(searchTerm);
-          }}
-        />
+        <div className="input-with-button">
+          <input
+            placeholder="Search for tracks, playlists, or users..."
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") getAll(searchTerm);
+              handleAllOption();
+            }}
+          />
+          <div className="close-button" onClick={handleCloseMenu}>
+            <RiCloseLine className="close-trigger" />
+          </div>
+        </div>
       </div>
 
       {searchTerm && (
@@ -228,7 +245,13 @@ const Search = ({
         </div>
       )}
 
-      <div className="results">
+      <div
+        className={`results ${
+          allOption || tracksOption || playlistsOption || usersOption
+            ? "visible"
+            : ""
+        }`}
+      >
         {/* shows the first 3 results from all categories on initial search or if "All" option is selected; also include the option to "see more" or "see all" */}
         {allOption && (
           <>
