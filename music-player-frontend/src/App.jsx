@@ -2,6 +2,8 @@ import { useState, useRef } from "react";
 import Search from "./scenes/search/Search";
 import AudioPlayer from "./scenes/audio-player/AudioPlayer";
 import AudioVisualizer from "./scenes/audio-visualizer/audioVisualizer";
+// import PlaylistView from "./scenes/search/playlistView";
+// import UserView from "./scenes/search/userView";
 import Sidebar from "./components/Sidebar";
 
 function App() {
@@ -17,6 +19,33 @@ function App() {
     audioRef.current = el;
     setIsAudioReady(true);
   };
+
+  // const renderMainView = () => {
+  //   if (selectedPlaylistId) {
+  //     return (
+  //       <PlaylistView
+  //         playlistId={selectedPlaylistId}
+  //         onBack={() => setSelectedPlaylistId(null)}
+  //         onTrackSelect={setSelectedTrackId}
+  //       />
+  //     );
+  //   } else if (selectedUserId) {
+  //     return (
+  //       <UserView
+  //         userId={selectedUserId}
+  //         onBack={() => setSelectedUserId(null)}
+  //       />
+  //     );
+  //   } else {
+  //     return (
+  //       <Search
+  //         setSelectedTrackId={setSelectedTrackId}
+  //         setSelectedPlaylistId={setSelectedPlaylistId}
+  //         setSelectedUserId={setSelectedUserId}
+  //       />
+  //     );
+  //   }
+  // };
 
   return (
     <>

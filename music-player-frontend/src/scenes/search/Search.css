@@ -16,9 +16,7 @@
 }
 
 .search-container.open {
-  transform: translateX(
-    80px
-  ); /* Slide in from the left to align with sidebar */
+  transform: translateX(80px);
 }
 
 .search-bar {
@@ -53,7 +51,7 @@
   height: 30px;
   width: 30px;
   position: absolute;
-  right: -47px; /* Overhangs half the button width */
+  right: -47px;
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;

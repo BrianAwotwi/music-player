@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 
+import "./UserView.css";
+
 const UserView = ({ userId, onBack }) => {
   const [user, setUser] = useState(null);
 
@@ -27,12 +29,14 @@ const UserView = ({ userId, onBack }) => {
     <div className="user-view">
       <button onClick={onBack}>← Go Back</button>
       <div className="user-card">
+        <img src={user.avatar_url || "img/user_ph.png"} alt="User" />
         <h2>{user.username}</h2>
+        <p>{user.country || "Country unknown"}</p>
+        <p>{user.description || "No description available"}</p>
         <p>Followers: {user.followers_count}</p>
-        <p>Following: {user.following_count}</p>
+        <p>Following: {user.followings_count}</p>
         <p>Likes: {user.likes_count}</p>
-        <p>Playlists: {user.playlists_count}</p>
-        <img src={user.avatar_url || "img/music_ph.png"} alt="User" />
+        <p>Playlists: {user.playlist_count}</p>
       </div>
     </div>
   );

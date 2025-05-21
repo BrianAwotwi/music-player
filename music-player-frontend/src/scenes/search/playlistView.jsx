@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 
 import { AiTwotoneLike } from "react-icons/ai";
+import { IoPlay } from "react-icons/io5";
+
+import "./Card.css";
 
 const PlaylistView = ({ playlistId, onBack, onTrackSelect }) => {
   const [playlist, setPlaylist] = useState(null);
@@ -34,6 +37,16 @@ const PlaylistView = ({ playlistId, onBack, onTrackSelect }) => {
     }${seconds}`;
   };
 
+  function formatNumber(num) {
+    if (num >= 1_000_000) {
+      return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+    } else if (num >= 1_000) {
+      return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+    } else {
+      return num.toString();
+    }
+  }
+
   const daysAgo = (date) => {
     const now = new Date();
     const diffTime = Math.abs(now - new Date(date));
@@ -56,11 +69,21 @@ const PlaylistView = ({ playlistId, onBack, onTrackSelect }) => {
       <p>{playlist.description}</p>
 
       {playlist.tracks.map((track) => (
-        <div key={track.id} onClick={() => onTrackSelect(track.id)}>
+        <div
+          className="card"
+          key={track.id}
+          onClick={() => onTrackSelect(track.id)}
+        >
           <img src={track.artwork_url || "img/music_ph.png"} alt="Track" />
-          <div>
-            <strong>{track.title}</strong>
-            <h4>{track.metadata_artist}</h4>
+          <div className="card-content">
+            <h4>
+              <strong>{track.title}</strong>
+            </h4>
+            <h4>{track.metadata_artist || "Artist unknown"}</h4>
+            <h4>
+              <IoPlay />
+              {formatNumber(track.playback_count)} - {toHms(track.duration)}
+            </h4>
           </div>
         </div>
       ))}
