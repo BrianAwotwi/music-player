@@ -1,9 +1,8 @@
 import { useState, useRef } from "react";
 import Search from "./scenes/search/Search";
+import Library from "./library/Library";
 import AudioPlayer from "./scenes/audio-player/AudioPlayer";
 import AudioVisualizer from "./scenes/audio-visualizer/audioVisualizer";
-// import PlaylistView from "./scenes/search/playlistView";
-// import UserView from "./scenes/search/userView";
 import Sidebar from "./components/Sidebar";
 
 function App() {
@@ -12,6 +11,7 @@ function App() {
   const [selectedTrackId, setSelectedTrackId] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
 
   const audioRef = useRef(null);
 
@@ -20,44 +20,18 @@ function App() {
     setIsAudioReady(true);
   };
 
-  // const renderMainView = () => {
-  //   if (selectedPlaylistId) {
-  //     return (
-  //       <PlaylistView
-  //         playlistId={selectedPlaylistId}
-  //         onBack={() => setSelectedPlaylistId(null)}
-  //         onTrackSelect={setSelectedTrackId}
-  //       />
-  //     );
-  //   } else if (selectedUserId) {
-  //     return (
-  //       <UserView
-  //         userId={selectedUserId}
-  //         onBack={() => setSelectedUserId(null)}
-  //       />
-  //     );
-  //   } else {
-  //     return (
-  //       <Search
-  //         setSelectedTrackId={setSelectedTrackId}
-  //         setSelectedPlaylistId={setSelectedPlaylistId}
-  //         setSelectedUserId={setSelectedUserId}
-  //       />
-  //     );
-  //   }
-  // };
-
   return (
     <>
       <div className="relative h-screen w-screen overflow-hidden">
         {isAudioReady && <AudioVisualizer audioRef={audioRef} />}
 
         <div className="relative z-10">
-          {/* {renderMainView()} */}
-
           {selectedTrackId && (
             <AudioPlayer
               trackId={selectedTrackId}
+              title="HI"
+              artist="HO"
+              artworkUrl="YO"
               audioRef={audioRef}
               setAudioElement={handleSetAudioElement}
             />
@@ -65,9 +39,16 @@ function App() {
         </div>
       </div>
       <Sidebar
-        setShowSearch={() => setShowSearch(true)}
-        // setShowLibrary={showLibrary}
+        setShowSearch={() => {
+          setShowSearch(true);
+          setShowLibrary(false);
+        }}
+        setShowLibrary={() => {
+          setShowLibrary(true);
+          setShowSearch(false);
+        }}
       />
+
       {showSearch && (
         <Search
           open={showSearch}
@@ -76,6 +57,9 @@ function App() {
           setSelectedUserId={setSelectedUserId}
           onClose={() => setShowSearch(false)}
         />
+      )}
+      {showLibrary && (
+        <Library open={showLibrary} onClose={() => setShowLibrary(false)} />
       )}
     </>
   );

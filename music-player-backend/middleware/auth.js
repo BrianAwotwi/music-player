@@ -3,6 +3,8 @@ import fetch from "node-fetch";
 import dotenv from "dotenv";
 import crypto from "crypto";
 
+import User from "../models/User.js";
+
 dotenv.config();
 
 const router = express.Router();
@@ -11,6 +13,21 @@ const clientId = process.env.SOUNDCLOUD_CLIENT_ID;
 const clientSecret = process.env.SOUNDCLOUD_CLIENT_SECRET;
 const redirectUri = process.env.SOUNDCLOUD_REDIRECT_URI;
 const scope = "user-read-private user-read-email";
+
+// const { id, username, avatar_url } = userData;
+
+// let user = await User.findOne({ soundcloudId: id });
+
+// if (!user) {
+//   user = await User.create({
+//     soundcloudId: id,
+//     soundcloudUsername: username,
+//     soundcloudAvatar: avatar_url,
+//   });
+// }
+
+// req.session.userId = user._id;
+// req.session.soundcloudId = id;
 
 // Function to generate a random string (code_verifier)
 const generateRandomString = (length) => {
@@ -59,7 +76,7 @@ router.get("/callback", async (req, res) => {
     return res.status(400).json({ error: "Authorization code is missing" });
   }
 
-  const url = "https://api.soundcloud.com/oauth2/token";
+  const tokenUrl = "https://api.soundcloud.com/oauth2/token";
   const payload = new URLSearchParams({
     client_id: clientId,
     client_secret: clientSecret,
@@ -69,7 +86,7 @@ router.get("/callback", async (req, res) => {
   });
 
   try {
-    const response = await fetch(url, {
+    const tokenRes = await fetch(tokenUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -77,41 +94,72 @@ router.get("/callback", async (req, res) => {
       body: payload,
     });
 
-    const data = await response.json();
-    console.log("SoundCloud API Response:", data);
+    const tokenData = await tokenRes.json();
+    console.log("SoundCloud token response:", tokenData);
 
-    if (data.access_token) {
-      // ✅ Store in session
-      req.session.accessToken = data.access_token;
-
-      // Optional: also store refresh token if you plan to use it
-      req.session.refreshToken = data.refresh_token;
-
-      // Redirect or respond
-      res.redirect("http://localhost:5173"); // send user back to frontend
-    } else {
-      res
+    if (!tokenData.access_token) {
+      return res
         .status(400)
-        .json({ error: "Failed to retrieve access token", details: data });
+        .json({ error: "Failed to get access token", details: tokenData });
     }
-  } catch (error) {
-    res.status(500).json({ error: "Server error", details: error.message });
+
+    req.session.accessToken = tokenData.access_token;
+    req.session.refreshToken = tokenData.refresh_token;
+
+    // ✅ Fetch SoundCloud user info
+    const userRes = await fetch("https://api.soundcloud.com/me", {
+      headers: {
+        Authorization: `OAuth ${tokenData.access_token}`,
+      },
+    });
+
+    const userData = await userRes.json();
+    if (!userRes.ok) {
+      return res
+        .status(500)
+        .json({ error: "Failed to fetch user info", details: userData });
+    }
+
+    const { id, username, avatar_url } = userData;
+
+    // ✅ Find or create user in MongoDB
+    let user = await User.findOne({ soundcloudId: id });
+
+    if (!user) {
+      user = await User.create({
+        soundcloudId: id,
+        soundcloudUsername: username,
+        soundcloudAvatar: avatar_url,
+      });
+    }
+
+    req.session.userId = user._id;
+    req.session.soundcloudId = id;
+
+    console.log("User logged in:", user.soundcloudUsername);
+
+    res.redirect("http://localhost:5173"); // Your frontend URL
+  } catch (err) {
+    console.error("Callback error:", err);
+    res
+      .status(500)
+      .json({ error: "Internal server error", details: err.message });
   }
 });
 
 // Step 3: Refresh access token
 router.post("/refresh", async (req, res) => {
-  const { refresh_token } = req.body;
-  if (!refresh_token) {
+  const refreshToken = req.body.refreshToken || req.session.refreshToken;
+  if (!refreshToken) {
     return res.status(400).json({ error: "Refresh token is required" });
   }
 
-  const url = "https://secure.soundcloud.com/api/token";
+  const url = "https://api.soundcloud.com/oauth2/token";
   const payload = new URLSearchParams({
     client_id: clientId,
     client_secret: clientSecret,
     grant_type: "refresh_token",
-    refresh_token: refresh_token,
+    refresh_token: refreshToken,
   });
 
   try {
@@ -126,15 +174,21 @@ router.post("/refresh", async (req, res) => {
     const data = await response.json();
     console.log("SoundCloud API Response:", data);
 
-    if (data.access_token) {
-      res.json({
-        access_token: data.access_token,
-        expires_in: data.expires_in,
-      });
-    } else {
-      res.status(400).json({ error: "Failed to refresh access token" });
+    if (!response.ok) {
+      console.error("Refresh failed:", data);
+      return res.status(500).json({ error: "Refresh failed", details: data });
     }
+
+    // Save new tokens to session if provided
+    if (data.access_token) req.session.accessToken = data.access_token;
+    if (data.refresh_token) req.session.refreshToken = data.refresh_token;
+
+    res.json({
+      access_token: data.access_token,
+      expires_in: data.expires_in,
+    });
   } catch (error) {
+    console.error("Network or server error:", error.message);
     res.status(500).json({ error: "Server error", details: error.message });
   }
 });

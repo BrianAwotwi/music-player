@@ -17,6 +17,10 @@ const Card = ({ card, type, onClick }) => {
   };
 
   function formatNumber(num) {
+    if (typeof num !== "number" || isNaN(num)) {
+      return "N/A"; // or "N/A" or "" depending on how you want to show missing data
+    }
+
     if (num >= 1_000_000) {
       return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
     } else if (num >= 1_000) {
@@ -35,7 +39,7 @@ const Card = ({ card, type, onClick }) => {
             <h4>
               <strong>{card.title}</strong>
             </h4>
-            <h4>{card.metadata_artist || "Artist unknown"}</h4>
+            <h4>{card.metadata_artist || "Unknown Artist"}</h4>
             <h4>
               <IoPlay />
               {formatNumber(card.playback_count)} - {toHms(card.duration)}
@@ -45,7 +49,7 @@ const Card = ({ card, type, onClick }) => {
         {type === "playlist" && (
           <>
             <h4>{card.title}</h4>
-            <h4>{card.user.username}</h4>
+            <h4>{card.user.username || "Unknown User"}</h4>
             <h4>
               <FaHeart />
               {formatNumber(card.likes_count)} - {card.track_count} Tracks -{" "}

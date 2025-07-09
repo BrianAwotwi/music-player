@@ -7,14 +7,26 @@ import {
   IoVolumeMedium,
   IoVolumeHigh,
   IoVolumeMute,
+  IoHeartOutline,
+  IoPlaySkipForward,
+  IoPlaySkipBack,
 } from "react-icons/io5";
+import { TfiLoop, TfiControlShuffle } from "react-icons/tfi";
 
-import "./audioPlayer.css";
+import "./AudioPlayer.css";
 
-export default function AudioPlayer({ trackId, setAudioElement, audioRef }) {
+export default function AudioPlayer({
+  trackId,
+  title,
+  artist,
+  artworkUrl,
+  setAudioElement,
+  audioRef,
+}) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+  const [isRepeating, setIsRepeating] = useState(false);
   const audioElementRef = useRef(new Audio());
   const containerRef = useRef(null);
   const wavesurferRef = useRef(null);
@@ -77,6 +89,7 @@ export default function AudioPlayer({ trackId, setAudioElement, audioRef }) {
         ws.on("ready", () => {
           setAudioElement(audioElementRef.current);
           ws.setVolume(isMuted ? 0 : volume);
+          audioElementRef.current.loop = isRepeating;
           ws.play();
           setIsPlaying(true);
         });
@@ -114,10 +127,40 @@ export default function AudioPlayer({ trackId, setAudioElement, audioRef }) {
     setIsMuted((prev) => !prev);
   };
 
+  const handleLikeTrack = async () => {
+    try {
+      const res = await fetch("http://localhost:8080/api/liked", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          trackId,
+          title,
+          artist,
+          artworkUrl,
+        }),
+      });
+
+      const data = await res.json();
+      console.log("Like response:", data);
+    } catch (err) {
+      console.error("Failed to like track:", err);
+    }
+  };
+
   const handleVolumeChange = (e) => {
     const newVolume = parseFloat(e.target.value);
     setVolume(newVolume);
     setIsMuted(newVolume === 0);
+  };
+
+  const toggleRepeat = () => {
+    const audio = audioElementRef.current;
+    if (audio) {
+      const newRepeatState = !isRepeating;
+      audio.loop = newRepeatState;
+      setIsRepeating(newRepeatState);
+    }
   };
 
   const getVolumeIcon = () => {
@@ -131,8 +174,16 @@ export default function AudioPlayer({ trackId, setAudioElement, audioRef }) {
 
   return (
     <div className="audio-widget">
+      <button>
+        <IoPlaySkipBack />
+      </button>
+
       <button onClick={togglePlayPause} className="text-2xl">
         {isPlaying ? <IoPause /> : <IoPlay />}
+      </button>
+
+      <button>
+        <IoPlaySkipForward />
       </button>
 
       <button onClick={toggleMute} className="text-2xl">
@@ -148,7 +199,22 @@ export default function AudioPlayer({ trackId, setAudioElement, audioRef }) {
         onChange={handleVolumeChange}
       />
 
+      <button>
+        <TfiControlShuffle />
+      </button>
+
+      <button
+        onClick={toggleRepeat}
+        className={`repeat-button ${isRepeating ? "active" : ""}`}
+        title={isRepeating ? "Repeat On" : "Repeat Off"}
+      >
+        <TfiLoop />
+      </button>
+
       <div ref={containerRef} className="flex-1" />
+      <button onClick={handleLikeTrack}>
+        <IoHeartOutline />
+      </button>
     </div>
   );
 }

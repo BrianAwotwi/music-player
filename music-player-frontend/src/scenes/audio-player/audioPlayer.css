@@ -38,6 +38,21 @@
   cursor: pointer;
 }
 
+/* Repeat Button */
+.repeat-button {
+  font-size: 1.5rem; /* equivalent to Tailwind's text-2xl */
+  border: 2px solid transparent;
+  border-radius: 0.25rem; /* Tailwind's rounded */
+  padding: 0.25rem; /* Optional: for spacing */
+  background: none;
+  cursor: pointer;
+}
+
+.repeat-button.active {
+  color: rgb(168, 85, 247); /* Tailwind's text-purple-500 */
+  border-color: white;
+}
+
 /* WaveSurfer Container */
 .audio-widget .flex-1 {
   flex: 1;
